@@ -1,8 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 import { EventInput, CompanyData, RawCompanyExtraction } from "../types";
 
-// Updated to the recommended stable flash model
-const MODEL_ID = "gemini-3-flash-preview";
+// Updated to a known stable model with search capabilities
+const MODEL_ID = "gemini-2.0-flash-exp";
 
 const getClient = (apiKey: string) => new GoogleGenAI({ apiKey });
 
@@ -89,10 +89,14 @@ export const harvestEventCompanies = async (
       }
     });
 
+    // Debug logging
+    console.log("Raw AI Response:", response.text);
+
     const data = parseJSON<RawCompanyExtraction[]>(response.text);
     
     if (!data || !Array.isArray(data)) {
-      log(`Failed to parse company list from AI response.`);
+      log(`Failed to parse company list from AI response. Check console for raw output.`);
+      console.warn("Raw response that failed parsing:", response.text);
       return [];
     }
 
