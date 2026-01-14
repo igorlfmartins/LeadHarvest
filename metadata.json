@@ -1,0 +1,5 @@
+{
+  "name": "LeadHarvest",
+  "description": "B2B prospecting tool for extracting and enriching company data from event lists using Gemini AI and Google Search.",
+  "requestFramePermissions": []
+}
