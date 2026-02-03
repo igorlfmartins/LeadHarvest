@@ -12,34 +12,45 @@ const getClient = (apiKey: string) => new GoogleGenAI({ apiKey });
 const parseJSON = <T>(text: string | undefined): T | null => {
   if (!text) return null;
   try {
+    let cleanText = text;
+    // Remove markdown code blocks
+    const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/;
+    const match = codeBlockRegex.exec(text);
+    if (match) {
+      cleanText = match[1];
+    }
+
     // Find the start of the first JSON object '{' or array '['
-    const jsonStart = text.indexOf('{');
-    const arrayStart = text.indexOf('[');
-    
+    const jsonStart = cleanText.indexOf('{');
+    const arrayStart = cleanText.indexOf('[');
+
     let start = -1;
     if (jsonStart > -1 && arrayStart > -1) {
-        start = Math.min(jsonStart, arrayStart);
+      start = Math.min(jsonStart, arrayStart);
     } else if (jsonStart > -1) {
-        start = jsonStart;
+      start = jsonStart;
     } else {
-        start = arrayStart;
+      start = arrayStart;
     }
 
     if (start === -1) {
-        throw new Error("No JSON object or array found in the response.");
+       // If no braces found, maybe it's just the content from the code block?
+       // Try parsing the whole cleanText if we had a match
+       if (match) return JSON.parse(cleanText);
+       throw new Error("No JSON object or array found in the response.");
     }
 
     // Find the end of the last JSON object '}' or array ']'
-    const jsonEnd = text.lastIndexOf('}');
-    const arrayEnd = text.lastIndexOf(']');
+    const jsonEnd = cleanText.lastIndexOf('}');
+    const arrayEnd = cleanText.lastIndexOf(']');
     const end = Math.max(jsonEnd, arrayEnd);
 
     if (end === -1) {
-        throw new Error("JSON object or array not properly closed.");
+      throw new Error("JSON object or array not properly closed.");
     }
 
     // Extract and parse the JSON string
-    const jsonString = text.substring(start, end + 1);
+    const jsonString = cleanText.substring(start, end + 1);
     return JSON.parse(jsonString);
   } catch (e: any) {
     console.error("Failed to parse JSON response:", text, "Error:", e.message);
@@ -61,9 +72,9 @@ export const harvestEventCompanies = async (
   }
 
   const ai = getClient(apiKey);
-  
+
   log(`Initializing harvester for: ${event.eventName}...`);
-  
+
   // Explicitly requesting strict JSON in the prompt since we can't use responseMimeType with tools
   const prompt = `
     Find the official list of sponsors, exhibitors, or speakers for the event "${event.eventName}" (${event.location || 'Global'}).
@@ -93,7 +104,7 @@ export const harvestEventCompanies = async (
     console.log("Raw AI Response:", response.text);
 
     const data = parseJSON<RawCompanyExtraction[]>(response.text);
-    
+
     if (!data || !Array.isArray(data)) {
       log(`Failed to parse company list from AI response. Check console for raw output.`);
       console.warn("Raw response that failed parsing:", response.text);
@@ -126,7 +137,7 @@ export const enrichCompany = async (
   if (!apiKey) return { website: '', location: 'Unknown', industry: 'Unknown' };
 
   const ai = getClient(apiKey);
-  
+
   const prompt = `
     Research the company "${companyName}" which participated in "${eventName}".
     

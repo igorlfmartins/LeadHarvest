@@ -19,12 +19,17 @@ import { EventInput, CompanyData, HarvestLog } from './types';
 import * as GeminiService from './services/geminiService';
 import * as AirtableService from './services/airtableService';
 
-// Simple UUID generator since we can't import 'uuid' in this specific sandbox without package.json
-const generateId = () => Math.random().toString(36).substring(2, 15);
+// Simple UUID generator
+const generateId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).substring(2, 15);
+};
 
 // API Keys
-const GEMINI_API_KEY = process.env.API_KEY || "";
-const DEFAULT_AIRTABLE_TOKEN = "patlwi0jIvkmDVWJP.f2333aa16a74ddebdf8ae4d341ab4d6159195b3ee9559593e8d004bdbda8d0c1";
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+const DEFAULT_AIRTABLE_TOKEN = import.meta.env.VITE_AIRTABLE_TOKEN || "";
 
 // Storage Keys (Versioned to force refresh when default token changes)
 const STORAGE_KEY_TOKEN = 'lh_pat_v3';
@@ -338,29 +343,42 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {/* Auth Error Banner with Remediation */}
-                  {authError && (
-                    <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-4 mb-4">
-                      <h3 className="text-red-600 dark:text-red-400 font-bold text-sm flex items-center gap-2 mb-2">
-                        <AlertCircle className="w-4 h-4" /> Connection Error
+                  {/* Auth Configuration / Error Banner */}
+                  {(authError || !airtableToken) && (
+                    <div className={`rounded-xl p-4 mb-4 border ${authError 
+                      ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20' 
+                      : 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20'}`}>
+                      
+                      <h3 className={`font-bold text-sm flex items-center gap-2 mb-2 ${authError 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-blue-600 dark:text-blue-400'}`}>
+                        {authError ? <><AlertCircle className="w-4 h-4" /> Connection Error</> : <><Key className="w-4 h-4" /> Setup Required</>}
                       </h3>
-                      <p className="text-xs text-red-500 dark:text-red-300 leading-relaxed mb-3">
-                        {authError}
+                      
+                      <p className={`text-xs leading-relaxed mb-3 ${authError 
+                        ? 'text-red-500 dark:text-red-300' 
+                        : 'text-blue-500 dark:text-blue-300'}`}>
+                        {authError || "Please enter your Airtable Personal Access Token to connect to the database."}
                       </p>
+                      
                       <div className="flex flex-col gap-2">
                         <input
                           type="password"
                           value={retryToken}
                           onChange={(e) => setRetryToken(e.target.value)}
-                          placeholder="Paste new Airtable Token (pat...)"
-                          className="w-full text-xs p-2 rounded border border-red-200 dark:border-red-500/30 bg-white dark:bg-slate-900 text-slate-800 dark:text-white focus:ring-1 focus:ring-red-500 outline-none"
+                          placeholder="Paste Airtable Token (pat...)"
+                          className={`w-full text-xs p-2 rounded border bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-1 ${authError
+                            ? 'border-red-200 dark:border-red-500/30 focus:ring-red-500'
+                            : 'border-blue-200 dark:border-blue-500/30 focus:ring-blue-500'}`}
                         />
                         <button
                           onClick={handleUpdateToken}
                           disabled={!retryToken}
-                          className="w-full py-1.5 px-3 bg-red-100 dark:bg-red-500/20 hover:bg-red-200 dark:hover:bg-red-500/30 border border-red-200 dark:border-red-500/30 rounded text-xs text-red-700 dark:text-red-200 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                          className={`w-full py-1.5 px-3 rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 border ${authError
+                            ? 'bg-red-100 dark:bg-red-500/20 hover:bg-red-200 dark:hover:bg-red-500/30 text-red-700 dark:text-red-200 border-red-200 dark:border-red-500/30'
+                            : 'bg-blue-100 dark:bg-blue-500/20 hover:bg-blue-200 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-500/30'}`}
                         >
-                          <Key className="w-3 h-3" /> Update Token & Retry
+                          <Key className="w-3 h-3" /> {authError ? 'Update Token & Retry' : 'Save Token'}
                         </button>
                       </div>
                     </div>
