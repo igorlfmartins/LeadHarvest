@@ -26,26 +26,23 @@ LeadHarvest is an AI-powered tool that turns event lists into actionable lead da
    npm run dev
    ```
 
-## ☁️ Deployment & Cloud Security
+## ☁️ Deployment on Railway
 
-To deploy this application to the cloud (Vercel, Netlify, AWS, etc.) without exposing your keys in the code repository, follow these steps:
+This project is configured to run on [Railway](https://railway.app/).
 
-### 1. Source Code Security
-We have already configured `.gitignore` to exclude your `.env` file. **Never** commit your real API keys to GitHub.
+1.  **Create a New Project:**
+    - Go to Railway Dashboard and click "New Project".
+    - Select "Deploy from GitHub repo" and choose this repository.
 
-### 2. Configuring Cloud Environment Variables
-When deploying, your cloud provider will need the keys to build the application. You must set them in your hosting dashboard:
+2.  **Configure Environment Variables:**
+    - Once the project is created, go to the **Variables** tab.
+    - Add the following variables (copy values from your local `.env`):
+        - `VITE_GEMINI_API_KEY`: Your Google Gemini API Key.
+        - `VITE_AIRTABLE_TOKEN`: Your Airtable Personal Access Token.
 
-**Required Variables:**
-- `VITE_GEMINI_API_KEY`
-- `VITE_AIRTABLE_TOKEN`
-
-**How to set them:**
-- **Vercel:** Go to Settings > Environment Variables > Add New
-- **Netlify:** Go to Site settings > Build & deploy > Environment > Environment variables
-- **Render/Heroku:** Look for "Environment" or "Config Vars" in settings.
-
-Once added, redeploy your application. The build process will inject these values securely.
+3.  **Deploy:**
+    - Railway will automatically detect the changes and trigger a deployment.
+    - The build command `npm run build` and start command `npm run start` are already configured in `package.json`.
 
 ### ⚠️ Important Security Note
 Since this is a client-side application (Vite + React), variables prefixed with `VITE_` are bundled into the JavaScript code sent to the browser.
